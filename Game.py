@@ -110,7 +110,7 @@ class Game:
             predictions.append(model_NN.predict(X))
 
         action = np.argmax(np.array(predictions))
-        #print(sensors,action)
+        print(sensors,action)
         print("Wyegenrowano akcje", action , predictions)
         if action == 0:
             self.snake.kierunek(self.gora)
@@ -127,7 +127,6 @@ class Game:
 
 
     def start(self, initial_games, frame_rate, sterowanie,model_nn):
-
         # Inicjalizacja okna gry
         pygame.init()
         okno_Gry = pygame.display.set_mode((self.szerokosc_Okna_Main, self.wysokosc_Okna_Main), 0, 32)
@@ -145,26 +144,31 @@ class Game:
             glowa, wzrok, sensors = self.snake.zdaj_raport()
             s1, s2, s3 = sensors
             s6, s7 = self.snake.kierunek_jedzenia(self.jablko.pozycja)
-
+            kierunek_przed=self.snake.get_kierunek()
             if sterowanie == "AI":
-                run = self.steruj_AI(model_NN=model_nn,importance=5,sensors=[s1,s2,s3,glowa[0],glowa[1]])
+                run = self.steruj_AI(model_NN=model_nn,importance=4,sensors=[s1,s2,s3,self.snake.get_kierunek()])
             elif sterowanie == "ByHand":
                 run = self.steruj_recznie()
             elif sterowanie == "Random":
                 run =self.steruj_randomowo()
+            kierunek_po = self.snake.get_kierunek()
             still_alive=True
             # ODCZYTANIE WARTOŚCI SENSORÓW
             still_alive = self.snake.ruch()
-            #print("Zrobiłem ruch o wartosci", self.snake.get_kierunek())
+            #print("Przed dokonaniem ruchu poruszalem sie", kierunek_przed)
+            #print("Sensory mówią mi", [s1,s2,s3])
+            #print("Zrobiłem ruch o wartosci", kierunek_po)
             step=step+1
             if (still_alive == False): self.played_games = self.played_games + 1
             #print("Jak się dla mnie skonczyl ruch", still_alive)
+
 
             if still_alive==True:
                 nagroda=1
             else:
                 nagroda=0
-            self.history_of_game.append([s1,s2,s3,glowa[0],glowa[1],self.snake.get_kierunek(),nagroda])
+
+            self.history_of_game.append([s1,s2,s3,kierunek_przed,kierunek_po,nagroda])
 
             if self.snake.pozycja_Glowy() == self.jablko.pozycja:
                 self.snake.zjedzenie()
@@ -211,6 +215,7 @@ class Game:
 def main():
     print("Jesteśmy tu")
     gra=Game(rozmiar_kratki=50)
-    gra.start(initial_games=10,frame_rate=250,sterowanie="ByHand",model_nn=None)
+    gra.start(initial_games=1,frame_rate=250,sterowanie="ByHand",model_nn=None)
     print("Koniec")
 
+#main()

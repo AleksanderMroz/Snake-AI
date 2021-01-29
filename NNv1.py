@@ -16,23 +16,17 @@ class NN1:
         self.goal_steps = goal_steps
         self.lr = lr
         self.filename = filename
-        self.vectors_and_keys = [
-            [[0, -1], 0],
-            [[1, 0], 1],
-            [[0, 1], 2],
-            [[-1, 0], 3]
-        ]
         self.gra=None
 
 
 
-    def train_model(self,training_data,model):
+    def train_model(self,training_data,model,number_of_inputs):
         X = []
         y = []
         for part in training_data:
             y.append([part[-1]])
             insert=[]
-            for j in range(6):
+            for j in range(number_of_inputs-1):
                 insert.append([part[j]])
             X.append(insert)
 
@@ -40,10 +34,11 @@ class NN1:
         model.save(self.filename)
         return model
 
-    def model(self):
-        network = input_data(shape=[None, 6, 1], name='input')
+    def model(self,number_of_inputs):
+        network = input_data(shape=[None, number_of_inputs-1, 1], name='input')
+        network = fully_connected(network, 200, activation='relu')
         network = fully_connected(network, 30, activation='relu')
-        network = fully_connected(network, 1, activation='relu')
+        network = fully_connected(network, 1, activation='linear')
         network = regression(network, optimizer='adam', learning_rate=self.lr, loss='mean_square', name='target')
         model = tflearn.DNN(network, tensorboard_dir='log')
         return model
@@ -51,15 +46,14 @@ class NN1:
 
 
     def train(self):
-        self.gra=Game(rozmiar_kratki=50)
-        training_data = self.gra.start(initial_games=50,sterowanie="Random",frame_rate=1,model_nn=None)
-        nn_model = self.model()
-        nn_model = self.train_model(training_data, nn_model)
+        self.gra=Game(rozmiar_kratki=250)
+        training_data = self.gra.start(initial_games=500,sterowanie="Random",frame_rate=1,model_nn=None)
+        nn_model = self.model(number_of_inputs=6)
+        nn_model = self.train_model(training_data, nn_model,number_of_inputs=6)
         #nn_model.load(self.filename)
-        self.gra = Game(rozmiar_kratki=50)
+        self.gra = Game(rozmiar_kratki=250)
         self.gra.start(initial_games=1, sterowanie="AI", frame_rate=300, model_nn=nn_model)
 
 
-print("OK221321")
-ann1=NN1(initial_games=100, test_games=100, goal_steps=100, lr=1e-2, filename='nn1.tflearn')
+ann1=NN1(initial_games=10, test_games=100, goal_steps=100, lr=1e-2, filename='nn1.tflearn')
 ann1.train()
