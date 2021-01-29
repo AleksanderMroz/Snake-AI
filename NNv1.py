@@ -30,14 +30,14 @@ class NN1:
                 insert.append([part[j]])
             X.append(insert)
 
-        model.fit(X, y, n_epoch=1, shuffle=True, run_id=self.filename)
+        model.fit(X, y, n_epoch=100, shuffle=True, run_id=self.filename)
         model.save(self.filename)
         return model
 
     def model(self,number_of_inputs):
         network = input_data(shape=[None, number_of_inputs-1, 1], name='input')
-        network = fully_connected(network, 200, activation='relu')
-        network = fully_connected(network, 30, activation='relu')
+        network = fully_connected(network, 80, activation='relu')
+        #network = fully_connected(network, 30, activation='relu')
         network = fully_connected(network, 1, activation='linear')
         network = regression(network, optimizer='adam', learning_rate=self.lr, loss='mean_square', name='target')
         model = tflearn.DNN(network, tensorboard_dir='log')
@@ -51,9 +51,9 @@ class NN1:
         nn_model = self.model(number_of_inputs=6)
         nn_model = self.train_model(training_data, nn_model,number_of_inputs=6)
         #nn_model.load(self.filename)
-        self.gra = Game(rozmiar_kratki=250)
+        self.gra = Game(rozmiar_kratki=50)
         self.gra.start(initial_games=1, sterowanie="AI", frame_rate=300, model_nn=nn_model)
 
 
-ann1=NN1(initial_games=10, test_games=100, goal_steps=100, lr=1e-2, filename='nn1.tflearn')
+ann1=NN1(initial_games=10, test_games=100, goal_steps=100, lr=1e-3, filename='nn1.tflearn')
 ann1.train()

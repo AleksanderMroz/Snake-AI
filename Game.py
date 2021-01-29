@@ -123,6 +123,14 @@ class Game:
 
         return run
 
+    def zapisz_rekord(self,kierunek_przed,kierunek_po,sensors,wynik):
+
+
+
+        return [kierunek_przed,kierunek_po]
+
+
+
 
 
 
@@ -166,10 +174,10 @@ class Game:
             if still_alive==True:
                 nagroda=1
             else:
-                nagroda=0
+                nagroda=-1
 
+            #self.history_of_game.append(self.zapisz_rekord(kierunek_przed,kierunek_po,sensors,nagroda))
             self.history_of_game.append([s1,s2,s3,kierunek_przed,kierunek_po,nagroda])
-
             if self.snake.pozycja_Glowy() == self.jablko.pozycja:
                 self.snake.zjedzenie()
                 self.jablko.pozycja_Losowa()
