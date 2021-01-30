@@ -91,7 +91,7 @@ class Game:
 
         return run
 
-    def steruj_AI(self,model_NN,sensors,importance):
+    def steruj_AI(self,model_NN,sensors,number_of_sensors):
         run = True
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -100,17 +100,19 @@ class Game:
         # Sterowanie do Snake'a
         x=[]
 
-        for i in range(importance):
+        for i in range(number_of_sensors):
             x.append(sensors[i])
+        x.append(sensors[-1])
 
         predictions=[]
+
         for j in range(4):
-            X = np.append(x,j).reshape(-1, importance + 1, 1)
+            X = np.append(x,j).reshape(-1, number_of_sensors + 2, 1)
 
             predictions.append(model_NN.predict(X))
 
         action = np.argmax(np.array(predictions))
-        print(sensors,action)
+        print(x,action)
         print("Wyegenrowano akcje", action , predictions)
         if action == 0:
             self.snake.kierunek(self.gora)
@@ -123,18 +125,11 @@ class Game:
 
         return run
 
-    def zapisz_rekord(self,kierunek_przed,kierunek_po,sensors,wynik):
-
-
-
-        return [kierunek_przed,kierunek_po]
 
 
 
 
-
-
-    def start(self, initial_games, frame_rate, sterowanie,model_nn):
+    def start(self, initial_games, frame_rate, sterowanie,model_nn,number_of_sensors):
         # Inicjalizacja okna gry
         pygame.init()
         okno_Gry = pygame.display.set_mode((self.szerokosc_Okna_Main, self.wysokosc_Okna_Main), 0, 32)
@@ -151,14 +146,19 @@ class Game:
             #print("\n\n\nNOWA AKCJA nr", step)
             glowa, wzrok, sensors = self.snake.zdaj_raport()
             s1, s2, s3 = sensors
+            s4,s5=[0,0]#wzrok
             s6, s7 = self.snake.kierunek_jedzenia(self.jablko.pozycja)
+            s6=s6/1000
+            s7=s7/1000
             kierunek_przed=self.snake.get_kierunek()
             if sterowanie == "AI":
-                run = self.steruj_AI(model_NN=model_nn,importance=4,sensors=[s1,s2,s3,self.snake.get_kierunek()])
+                run = self.steruj_AI(model_NN=model_nn,number_of_sensors=number_of_sensors,sensors=[s1,s2,s3,s4,s5,s6,s7,self.snake.get_kierunek()])
             elif sterowanie == "ByHand":
                 run = self.steruj_recznie()
             elif sterowanie == "Random":
                 run =self.steruj_randomowo()
+
+
             kierunek_po = self.snake.get_kierunek()
             still_alive=True
             # ODCZYTANIE WARTOŚCI SENSORÓW
@@ -171,16 +171,25 @@ class Game:
             #print("Jak się dla mnie skonczyl ruch", still_alive)
 
 
+            if self.snake.pozycja_Glowy() == self.jablko.pozycja:
+                self.snake.zjedzenie()
+                self.jablko.pozycja_Losowa()
+
             if still_alive==True:
-                nagroda=1
+                s6k, s7k = self.snake.kierunek_jedzenia(self.jablko.pozycja)
+                s6k=s6k/1000
+                s7k=s7k/1000
+                if(math.sqrt(s7k**2)<math.sqrt(s7**2)):
+                    nagroda = 1
+                elif (math.sqrt(s6k**2)<math.sqrt(s6**2)):
+                    nagroda = 0.75
+                else:
+                 nagroda=0
             else:
                 nagroda=-1
 
             #self.history_of_game.append(self.zapisz_rekord(kierunek_przed,kierunek_po,sensors,nagroda))
-            self.history_of_game.append([s1,s2,s3,kierunek_przed,kierunek_po,nagroda])
-            if self.snake.pozycja_Glowy() == self.jablko.pozycja:
-                self.snake.zjedzenie()
-                self.jablko.pozycja_Losowa()
+            self.history_of_game.append([s1,s2,s3,s4,s5,s6,s7,kierunek_przed,kierunek_po,nagroda])
 
             if still_alive == True:
                 self.generuj_obraz(okno_Gry)
@@ -188,10 +197,19 @@ class Game:
             print(self.history_of_game)
             return self.history_of_game
 
+
+
+
+
+
+
     def generuj_obraz(self, okno_Gry):
         glowa, wzrok, sensors = self.snake.zdaj_raport()
         s1, s2, s3 = sensors
+        s4, s5 = wzrok
         s6, s7 = self.snake.kierunek_jedzenia(self.jablko.pozycja)
+        s6 = s6 / 1000
+        s7 = s7 / 1000
         self.rysowanieSiatki(okno_Gry)
         self.snake.rysowanie(okno_Gry)
         self.jablko.rysuj(okno_Gry)
@@ -205,7 +223,8 @@ class Game:
         sen5 = self.czcionka.render("Sensor 5: {0}".format(round(wzrok[1], 4)), 1, (255, 255, 0))
         sen6 = self.czcionka.render("Sensor 6: {0}".format(s6), 1, (255, 255, 0))
         sen7 = self.czcionka.render("Sensor 7: {0}".format(s7), 1, (255, 255, 0))
-        # wzrok[0],wzrok[1],s6,s7
+
+
         okno_Gry.blit(sen0, (1055, 10))
         okno_Gry.blit(score, (1055, 40))
         okno_Gry.blit(sen1, (1055, 70))
@@ -216,14 +235,13 @@ class Game:
         okno_Gry.blit(sen6, (1055, 220))
         okno_Gry.blit(sen7, (1055, 250))
         pygame.display.update()
-
         pass
 
 
 def main():
     print("Jesteśmy tu")
     gra=Game(rozmiar_kratki=50)
-    gra.start(initial_games=1,frame_rate=250,sterowanie="ByHand",model_nn=None)
+    gra.start(initial_games=1,frame_rate=250,sterowanie="ByHand",model_nn=None,number_of_sensors=None)
     print("Koniec")
 
-#main()
+main()
